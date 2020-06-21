@@ -34,7 +34,7 @@ CHE_MACHINE_EXEC_URL=$(echo $WORKSPACE_INFO | jq -r '.["runtime"]["machines"][][
 ### ワークスペース情報取得
 
 ```sh
-$ echo $WORKSPACE_INFO | ./jq -r '.["runtime"]["machines"][]["servers"] | select(. != null) | keys | .[]'
+$ echo $WORKSPACE_INFO | jq -r '.["runtime"]["machines"][]["servers"] | select(. != null) | keys | .[]'
 theia
 theia-dev
 theia-redirect-1
@@ -59,8 +59,8 @@ MACHINE_EXEC_ID=0
 MACHINE_NAME="nodejs"
 MACHINE_EXEC_REQUEST="{\"jsonrpc\":\"2.0\",\"id\":$MACHINE_EXEC_ID,\"method\":\"create\",\"params\":{\"identifier\":{\"machineName\":\"$MACHINE_NAME\",\"workspaceId\":\"$CHE_WORKSPACE_ID\"},\"cmd\":[],\"cols\":80,\"rows\":24,\"tty\":true}}"
 
-MACHINE_EXEC_RESPONSE=$(echo $MACHINE_EXEC_REQUEST | ./websocat --text --max-messages 2 -n "$MACHINE_EXEC_CONNECT_URL" -)
-TERMINAL_ID=$(echo $MACHINE_EXEC_RESPONSE | ./jq -r '.["result"] | select(. != null)')
+MACHINE_EXEC_RESPONSE=$(echo $MACHINE_EXEC_REQUEST | websocat --text --max-messages 2 -n "$MACHINE_EXEC_CONNECT_URL" -)
+TERMINAL_ID=$(echo $MACHINE_EXEC_RESPONSE | jq -r '.["result"] | select(. != null)')
 ```
 
 
