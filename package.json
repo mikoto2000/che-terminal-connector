@@ -1,0 +1,15 @@
+{
+  "name": "che-terminal-connector",
+  "version": "1.0.0",
+  "description": "Terminal connector for Eclipse Che.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "mikoto2000",
+  "license": "MIT",
+  "dependencies": {
+    "keypress": "^0.2.1",
+    "ws": "^7.3.0"
+  }
+}
