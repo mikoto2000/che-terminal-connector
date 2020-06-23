@@ -10,6 +10,8 @@
   "license": "MIT",
   "dependencies": {
     "keypress": "^0.2.1",
+    "node-rest-client": "^3.1.0",
+    "prompts": "^2.3.2",
     "ws": "^7.3.0"
   }
 }
