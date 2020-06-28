@@ -1,0 +1,12 @@
+{
+    "compilerOptions": {
+        "lib": [
+            "es6",
+            "dom"
+        ],
+        "sourceMap": true
+    },
+    "files": [
+        "index.ts"
+    ]
+}

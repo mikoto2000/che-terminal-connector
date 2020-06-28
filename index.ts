@@ -1,29 +1,42 @@
 const keypress = require('keypress');
 const WebSocket = require('ws');
-const util = require('util');
-const Client = require('node-rest-client').Client;
 const prompts = require("prompts");
-
-// 定数群
-const CHE_URL = "https://che.openshift.io"; // TODO: 可変化
-const CHE_WORKSPACE_INFO_URL_FORMAT = CHE_URL + "/api/workspace/%s?token=%s";
-const CHE_WORKSPACE_ID = process.env.CHE_WORKSPACE_ID;
-const CHE_MACHINE_TOKEN = process.env.CHE_MACHINE_TOKEN;
-const WORKSPACE_INFO_URL = util.format(CHE_WORKSPACE_INFO_URL_FORMAT, CHE_WORKSPACE_ID, CHE_MACHINE_TOKEN);
+import WorkspaceClient, { IRestAPIConfig } from '@eclipse-che/workspace-client';
+import { che } from '@eclipse-che/api';
 
 // ワークスペース情報取得のための REST クライアント
-const client = new Client();
+const restAPIConfig: IRestAPIConfig = {};
+restAPIConfig.baseUrl = process.env.CHE_API;
 
+const CHE_MACHINE_TOKEN = process.env.CHE_MACHINE_TOKEN;
+if (CHE_MACHINE_TOKEN) {
+    restAPIConfig.headers = {};
+    restAPIConfig.headers['Authorization'] = 'Bearer ' + CHE_MACHINE_TOKEN;
+}
+const restApiClient = WorkspaceClient.getRestApi(restAPIConfig);
+
+const CHE_WORKSPACE_ID:string = process.env.CHE_WORKSPACE_ID || ""
 // ワークスペース情報取得要求
-client.get(WORKSPACE_INFO_URL, function (data) {
+const promise:Promise<che.workspace.Workspace> = restApiClient.getById<che.workspace.Workspace>(CHE_WORKSPACE_ID);
+
+
+promise.then((data:che.workspace.Workspace) => {
 
     // ワークスペース情報からターミナル接続に必要な情報を抜き出す
-    const machines = data.runtime.machines;
-    const machineKeys = Object.keys(machines);
-    const machineKeysIndex = machineKeys.findIndex(e => e.startsWith("che-machine-exec"));
-    const cheMachineExecUrl = machines[machineKeys[machineKeysIndex]].servers["che-machine-exec"].url;
+    const runtime:che.workspace.Runtime|undefined = data.runtime;
+    const machines:{[key:string]:che.workspace.Machine}|undefined = runtime?.machines;
+    const machineKeys:string[] = Object.keys(machines || {});
+    const machineKeysIndex:number = machineKeys.findIndex(e => e.startsWith("che-machine-exec"));
 
-    (async function () {
+    // TODO: 例外
+    if (!machines) {return}
+    const servers:{[key:string]:che.workspace.Server}|undefined = machines[machineKeys[machineKeysIndex]].servers;
+
+    // TODO: 例外
+    if (!servers) {return}
+    const cheMachineExecUrl:string|undefined = servers["che-machine-exec"].url;
+
+    (async function() {
         // ワークスペースに紐づいているサイドカーコンテナから、ターミナルを開きたいものをひとつ選択してもらう
         // TODO: 「引数でコンテナ名渡して起動する」もできるようにしたい
         const machineName = await choiceMachineName(machineKeys);
@@ -57,7 +70,7 @@ client.get(WORKSPACE_INFO_URL, function (data) {
 
         // che-machine-exec へ送信した
         // サイドカーコンテナ接続要求からの応答処理
-        wsMachineExecConnect.on('message', function incoming(data) {
+        wsMachineExecConnect.on('message', function incoming(data:string) {
 
             // 応答確認
             // 接続に成功したら `{"jsonrpc":"2.0","id":0,"result":31}` のような応答が返ってくる。
@@ -96,7 +109,7 @@ client.get(WORKSPACE_INFO_URL, function (data) {
                 });
 
                 // ターミナルメッセージの受信処理
-                wsForTerminal.on('message', function incoming(data) {
+                wsForTerminal.on('message', function incoming(data:string) {
                     // 終了チェック
                     // TODO: シェルの多重起動すると、一番深いシェルで exit しただけでプロセス終了する問題の修正
                     if (data === "\r\nexit\r\n") {
@@ -110,7 +123,7 @@ client.get(WORKSPACE_INFO_URL, function (data) {
                 });
             }
         });
-    }())
+    })();
 });
 
 /**
@@ -119,7 +132,7 @@ client.get(WORKSPACE_INFO_URL, function (data) {
  * @param machineNames マシン名のリスト
  * @return プロンプトで選択したマシン名
  */
-async function choiceMachineName(machineNames) {
+async function choiceMachineName(machineNames:string[]) {
     const choicePrompt = {
         type: "select",
         name: "machines",
@@ -128,5 +141,5 @@ async function choiceMachineName(machineNames) {
     };
 
     const promptResponse = await prompts(choicePrompt);
-    return machineNames[promptResponse.machines]
+    return machineNames[promptResponse.machines];
 }
