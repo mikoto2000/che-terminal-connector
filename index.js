@@ -49,7 +49,7 @@ client.get(WORKSPACE_INFO_URL, function (data) {
 
         // サイドカーコンテナ接続要求のための WebSocket
         const wsMachineExecConnect = new WebSocket(machineExecConnectUrl);
-        
+
         // サイドカーコンテナ接続要求
         wsMachineExecConnect.on('open', function open() {
             wsMachineExecConnect.send(JSON.stringify(machineExecRequest));
@@ -75,6 +75,9 @@ client.get(WORKSPACE_INFO_URL, function (data) {
 
                 // ターミナルオープン処理
                 wsForTerminal.on('open', function open() {
+                    // ターミナルクローズフラグ
+                    let isClose = false;
+
                     // キープレスイベントフック開始
                     keypress(process.stdin);
 
@@ -82,11 +85,21 @@ client.get(WORKSPACE_INFO_URL, function (data) {
                     process.stdin.on('keypress', function (ch, key) {
                         // ctrl+c でプロセス終了
                         if (key && key.ctrl && key.name == 'c') {
-                            process.exit(1);
+
+                            // Ctrl-C 2 連続で che-terminal-connector 自体を終了
+                            if (isClose) {
+                                console.log();
+                                console.log("Sidecar container exited.");
+                                process.exit(1);
+                            } else {
+                                isClose = true;
+                            }
+                        } else {
+                            isClose = false;
                         }
 
                         // プレスしたキーをサイドカーコンテナに送信
-                        wsForTerminal.send(ch);
+                        wsForTerminal.send(key.sequence);
                     });
 
                     // おまじないたち。
@@ -95,18 +108,14 @@ client.get(WORKSPACE_INFO_URL, function (data) {
                     process.stdin.resume();
                 });
 
+                // サイドカーコンテナ切断時の処理
+                wsForTerminal.on('close', function close() {
+                    process.exit(1);
+                });
+
                 // ターミナルメッセージの受信処理
                 wsForTerminal.on('message', function incoming(data) {
-                    // 終了チェック
-                    // TODO: シェルの多重起動すると、一番深いシェルで exit しただけでプロセス終了する問題の修正
-                    if (data === "\r\nexit\r\n") {
-                        // exit でプロセス終了
-                        console.log();
-                        process.exit(0);
-                    } else {
-                        // exit 以外ならローカルターミナルへ echo
-                        process.stdout.write(data);
-                    }
+                    process.stdout.write(data);
                 });
             }
         });
