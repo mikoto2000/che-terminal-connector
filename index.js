@@ -99,7 +99,11 @@ client.get(WORKSPACE_INFO_URL, function (data) {
                         }
 
                         // プレスしたキーをサイドカーコンテナに送信
-                        wsForTerminal.send(key.sequence);
+                        if (ch) {
+                            wsForTerminal.send(ch);
+                        } else {
+                            wsForTerminal.send(key.sequence);
+                        }
                     });
 
                     // おまじないたち。
