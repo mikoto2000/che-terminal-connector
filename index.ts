@@ -62,7 +62,7 @@ promise.then((data:che.workspace.Workspace) => {
 
         // サイドカーコンテナ接続要求のための WebSocket
         const wsMachineExecConnect = new WebSocket(machineExecConnectUrl);
-        
+
         // サイドカーコンテナ接続要求
         wsMachineExecConnect.on('open', function open() {
             wsMachineExecConnect.send(JSON.stringify(machineExecRequest));

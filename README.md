@@ -21,3 +21,4 @@ che-terminal-connector
 npm install
 ./node_modules/.bin/tsc
 ```
+
