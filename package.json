@@ -4,6 +4,9 @@
   "description": "Terminal connector for Eclipse Che.",
   "main": "index.js",
   "scripts": {
+    "build": "tsc",
+    "run": "tsc ; node index.js",
+    "nexe": "nexe -o che-terminal-connector -t linux-x64-12.9.1 index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -16,5 +19,12 @@
     "node-rest-client": "^3.1.0",
     "prompts": "^2.3.2",
     "ws": "^7.3.0"
+  },
+  "devDependencies": {
+    "@eclipse-che/api": "^7.5.0-SNAPSHOT",
+    "@eclipse-che/workspace-client": "0.0.1-1585913592",
+    "@types/node": "^14.0.14",
+    "nexe": "^4.0.0-beta.16",
+    "typescript": "^3.9.5"
   }
 }

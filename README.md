@@ -17,10 +17,8 @@ che-terminal-connector
 
 ## ビルド
 
-`node:10` の Docker イメージを使用すること。
-
 ```sh
-npm install -g nexe
-nexe --build linux-x64-12.9.1 ./index.js -o ./che-terminal-connector
+npm install
+./node_modules/.bin/tsc
 ```
 
