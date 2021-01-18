@@ -19,6 +19,7 @@ che-terminal-connector
 
 ```sh
 npm install
-./node_modules/.bin/tsc
+npm run build
+npm run nexe
 ```
 
