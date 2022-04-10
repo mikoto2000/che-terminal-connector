@@ -34,7 +34,8 @@ promise.then((data:che.workspace.Workspace) => {
 
     // TODO: 例外
     if (!servers) {return}
-    const cheMachineExecUrl:string|undefined = servers["che-machine-exec"].url;
+    let server = servers["che-machine-exec"] ?? servers["terminal"];
+    const cheMachineExecUrl:string|undefined = server.url;
 
     (async function() {
         // ワークスペースに紐づいているサイドカーコンテナから、ターミナルを開きたいものをひとつ選択してもらう
