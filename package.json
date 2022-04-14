@@ -2,6 +2,10 @@
   "name": "che-terminal-connector",
   "version": "1.0.0",
   "description": "Terminal connector for Eclipse Che.",
+  "preferGlobal": true,
+  "bin": {
+    "che-ssh-tool": "index.js"
+  },
   "main": "index.js",
   "scripts": {
     "build": "tsc",

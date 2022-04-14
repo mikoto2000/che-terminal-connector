@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 const keypress = require('keypress');
 const WebSocket = require('ws');
 const prompts = require("prompts");
