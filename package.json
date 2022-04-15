@@ -1,6 +1,6 @@
 {
   "name": "che-terminal-connector",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Terminal connector for Eclipse Che.",
   "preferGlobal": true,
   "bin": {
@@ -19,14 +19,14 @@
   "author": "mikoto2000",
   "license": "MIT",
   "dependencies": {
+    "@eclipse-che/api": "^7.5.0-SNAPSHOT",
+    "@eclipse-che/workspace-client": "^0.0.1-1585913592",
     "keypress": "^0.2.1",
     "node-rest-client": "^3.1.0",
     "prompts": "^2.3.2",
     "ws": "^7.3.0"
   },
   "devDependencies": {
-    "@eclipse-che/api": "^7.5.0-SNAPSHOT",
-    "@eclipse-che/workspace-client": "0.0.1-1585913592",
     "@types/node": "^14.0.14",
     "nexe": "^4.0.0-beta.16",
     "typescript": "^3.9.5"
