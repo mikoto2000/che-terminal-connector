@@ -5,6 +5,9 @@ const prompts = require("prompts");
 import WorkspaceClient, { IRestAPIConfig } from '@eclipse-che/workspace-client';
 import { che } from '@eclipse-che/api';
 
+// 自己証明書対応のために証明書の検証を無視
+process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0';
+
 // ワークスペース情報取得のための REST クライアント
 const restAPIConfig: IRestAPIConfig = {};
 restAPIConfig.baseUrl = process.env.CHE_API;
