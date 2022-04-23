@@ -5,9 +5,6 @@ const prompts = require("prompts");
 import WorkspaceClient, { IRestAPIConfig } from '@eclipse-che/workspace-client';
 import { che } from '@eclipse-che/api';
 
-// 自己証明書対応のために証明書の検証を無視
-process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0';
-
 // ワークスペース情報取得のための REST クライアント
 const restAPIConfig: IRestAPIConfig = {};
 restAPIConfig.baseUrl = process.env.CHE_API;
@@ -66,7 +63,9 @@ promise.then((data:che.workspace.Workspace) => {
         }
 
         // サイドカーコンテナ接続要求のための WebSocket
-        const wsMachineExecConnect = new WebSocket(machineExecConnectUrl);
+        const wsMachineExecConnect = new WebSocket(machineExecConnectUrl, {
+            rejectUnauthorized: false
+        });
 
         // サイドカーコンテナ接続要求
         wsMachineExecConnect.on('open', function open() {
@@ -89,7 +88,9 @@ promise.then((data:che.workspace.Workspace) => {
                 const wsForTerminalUrl = cheMachineExecUrl + "/attach/" + terminalId + "?token=" + CHE_MACHINE_TOKEN;
 
                 // ターミナルとして利用する WebSocket
-                const wsForTerminal = new WebSocket(wsForTerminalUrl);
+                const wsForTerminal = new WebSocket(wsForTerminalUrl, {
+                    rejectUnauthorized: false
+                });
 
                 // ターミナルオープン処理
                 wsForTerminal.on('open', function open() {

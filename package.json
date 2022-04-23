@@ -1,6 +1,6 @@
 {
   "name": "che-terminal-connector",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "Terminal connector for Eclipse Che.",
   "preferGlobal": true,
   "bin": {
