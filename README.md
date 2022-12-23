@@ -23,3 +23,8 @@ npm run build
 npm run nexe
 ```
 
+## ライセンス
+
+Copyright (C) 2022 mikoto2000
+
+このソフトウェアは EPL-2.0 ライセンスの下で公開されています。 LICENSE を参照してください。

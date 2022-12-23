@@ -1,0 +1,9 @@
+LICENCES
+
+src/machine-exec-client.ts - based from https://github.com/che-incubator/che-code/blob/5c487a82337f17bbe3b576b3c092f70e3803cf60/code/extensions/che-terminal/src/machine-exec-client.ts
+
+Copyright (c) 2022 Red Hat, Inc.
+
+This program and the accompanying materials are made
+available under the terms of the Eclipse Public License 2.0
+which is available at https://www.eclipse.org/legal/epl-2.0/
