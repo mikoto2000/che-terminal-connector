@@ -32,7 +32,8 @@ export class MachineExecClient {
 
 		this.connection = new WS('ws://localhost:3333/connect')
 			.on('message', async (data: WS.Data) => {
-                console.log(`[WebSocket] <<< ${data.toString()}`);
+			    // TODO: ロギングフレームワーク導入
+                // console.log(`[WebSocket] <<< ${data.toString()}`);
 
 				const message = JSON.parse(data.toString());
 				if (message.method === 'connected') {
@@ -40,13 +41,16 @@ export class MachineExecClient {
 					resolveInit();
 				} else if (message.method === 'onExecExit') {
 					this.onExecExitFunc();
-                    console.log("onExecExit");
+					// TODO: ロギングフレームワーク導入
+                    // console.log("onExecExit");
 				} else if (message.method === 'onExecError') {
+					// TODO: エラーハンドリングをまじめにやる
                     console.log("onExecError");
 				}
 			})
 			.on('error', (err: Error) => {
-                console.log(`[WebSocket] error: ${err.message}`);
+				// TODO: ロギングフレームワーク導入
+                // console.log(`[WebSocket] error: ${err.message}`);
 
 				rejectInit(err.message);
 			});
@@ -83,8 +87,8 @@ export class MachineExecClient {
 		};
 
 		const command = JSON.stringify(jsonCommand);
-		// getOutputChannel().appendLine(`[WebSocket] >>> ${command}`);
-		console.log(`[WebSocket] >>> ${command}`);
+		// TODO: ロギングフレームワーク導入
+		// console.log(`[WebSocket] >>> ${command}`);
         this.connection.send(command);
 
 		return new Promise(resolve => {
@@ -148,8 +152,8 @@ export class MachineExecClient {
 
 		const command = JSON.stringify(jsonCommand);
 
-		// getOutputChannel().appendLine(`[WebSocket] >>> ${command}`);
-        console.log(`[WebSocket] >>> ${command}`);
+        // TODO: ロギングフレーム導入
+		// console.log(`[WebSocket] >>> ${command}`);
 		this.connection.send(command);
 
 		return new Promise(resolve => {
@@ -186,19 +190,16 @@ export class MachineExecClient {
 
 		const command = JSON.stringify(jsonCommand);
 
-		console.log(`[WebSocket] >>> ${command}`);
+		// TODO: ロギングフレーム導入
+		// console.log(`[WebSocket] >>> ${command}`);
 		this.connection.send(command);
 	}
 
-	onExit(onExecExitFunc : () => void): void {
+	onExit(onExecExitFunc: () => void): void {
 		this.onExecExitFunc = onExecExitFunc;
 	}
 }
 
-// interface TerminalExitEvent {
-// 	sessionId: number;
-// 	exitCode: number;
-// }
 
 /** Allows managing a remote terminal session. */
 export class TerminalSession {
