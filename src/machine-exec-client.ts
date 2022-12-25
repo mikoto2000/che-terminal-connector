@@ -24,7 +24,7 @@ export class MachineExecClient {
 
 	private LIST_CONTAINERS_MESSAGE_ID = -5;
 
-	private onExecExitFunc: () => void = () => {};
+	private onExecExitFunc: () => void = () => { };
 
 	constructor() {
 		let resolveInit: () => void;
@@ -32,8 +32,8 @@ export class MachineExecClient {
 
 		this.connection = new WS('ws://localhost:3333/connect')
 			.on('message', async (data: WS.Data) => {
-			    // TODO: ロギングフレームワーク導入
-                // console.log(`[WebSocket] <<< ${data.toString()}`);
+				// TODO: ロギングフレームワーク導入
+				// console.log(`[WebSocket] <<< ${data.toString()}`);
 
 				const message = JSON.parse(data.toString());
 				if (message.method === 'connected') {
@@ -42,15 +42,15 @@ export class MachineExecClient {
 				} else if (message.method === 'onExecExit') {
 					this.onExecExitFunc();
 					// TODO: ロギングフレームワーク導入
-                    // console.log("onExecExit");
+					// console.log("onExecExit");
 				} else if (message.method === 'onExecError') {
 					// TODO: エラーハンドリングをまじめにやる
-                    console.log("onExecError");
+					console.log("onExecError");
 				}
 			})
 			.on('error', (err: Error) => {
 				// TODO: ロギングフレームワーク導入
-                // console.log(`[WebSocket] error: ${err.message}`);
+				// console.log(`[WebSocket] error: ${err.message}`);
 
 				rejectInit(err.message);
 			});
@@ -89,7 +89,7 @@ export class MachineExecClient {
 		const command = JSON.stringify(jsonCommand);
 		// TODO: ロギングフレームワーク導入
 		// console.log(`[WebSocket] >>> ${command}`);
-        this.connection.send(command);
+		this.connection.send(command);
 
 		return new Promise(resolve => {
 			this.connection.once('message', (data: WS.Data) => {
@@ -152,7 +152,7 @@ export class MachineExecClient {
 
 		const command = JSON.stringify(jsonCommand);
 
-        // TODO: ロギングフレーム導入
+		// TODO: ロギングフレーム導入
 		// console.log(`[WebSocket] >>> ${command}`);
 		this.connection.send(command);
 
@@ -209,7 +209,7 @@ export class TerminalSession {
 	/** The WebSocket connection to the actual terminal. */
 	private connection: WS;
 
-	private onOpenFunc: () => void = () => {};
+	private onOpenFunc: () => void = () => { };
 
 	/**
 	 * Attaches to an existing terminal session with the given ID.
@@ -233,7 +233,7 @@ export class TerminalSession {
 
 	onOpen(onOpenFunc: () => void) {
 		this.onOpenFunc = onOpenFunc;
-    }
+	}
 
 	send(data: string): void {
 		this.connection.send(data);

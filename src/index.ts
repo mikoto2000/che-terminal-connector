@@ -1,6 +1,6 @@
 import { MachineExecClient, TerminalSession } from './machine-exec-client';
 
-import {PromptObject, Choice} from 'prompts';
+import { PromptObject, Choice } from 'prompts';
 
 import prompts = require('prompts');
 const keypress = require('keypress');
@@ -19,13 +19,13 @@ async function main() {
     const choiicedContainerName: string = await choiceContainer(containers);
 
     console.log(choiicedContainerName);
-    
+
     const terminal: TerminalSession = await machineExecClient.createTerminalSession(
-            choiicedContainerName,
-            undefined,
-            undefined,
-            process.stdout.columns,
-            process.stdout.rows);
+        choiicedContainerName,
+        undefined,
+        undefined,
+        process.stdout.columns,
+        process.stdout.rows);
 
     console.log(`terminal.id: ${terminal.id}`);
 
@@ -33,7 +33,7 @@ async function main() {
     terminal.onOpen(() => {
         console.log('terminal opened.');
 
-        process.stdout.on('resize', function() {
+        process.stdout.on('resize', function () {
             console.log(`terminal size: { cols: ${process.stdout.columns}, rows: ${process.stdout.rows} }`);
 
             terminal.resize(process.stdout.columns, process.stdout.rows);
@@ -60,7 +60,7 @@ async function main() {
     });
 }
 
-async function choiceContainer(containers:string[]) : Promise<string> {
+async function choiceContainer(containers: string[]): Promise<string> {
 
     const choices: Choice[] = containers.map((container) => ({
         title: container
