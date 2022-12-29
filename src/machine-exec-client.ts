@@ -24,8 +24,6 @@ export class MachineExecClient {
 
 	private LIST_CONTAINERS_MESSAGE_ID = -5;
 
-	private onExecExitFunc: () => void = () => { };
-
 	constructor() {
 		let resolveInit: () => void;
 		let rejectInit: (reason: any) => void;
@@ -39,10 +37,6 @@ export class MachineExecClient {
 				if (message.method === 'connected') {
 					// the machine-exec server responds `connected` once it's ready to serve the clients
 					resolveInit();
-				} else if (message.method === 'onExecExit') {
-					this.onExecExitFunc();
-					// TODO: ロギングフレームワーク導入
-					// console.log("onExecExit");
 				} else if (message.method === 'onExecError') {
 					// TODO: エラーハンドリングをまじめにやる
 					console.log("onExecError");
@@ -195,9 +189,6 @@ export class MachineExecClient {
 		this.connection.send(command);
 	}
 
-	onExit(onExecExitFunc: () => void): void {
-		this.onExecExitFunc = onExecExitFunc;
-	}
 }
 
 
@@ -210,6 +201,8 @@ export class TerminalSession {
 	private connection: WS;
 
 	private onOpenFunc: () => void = () => { };
+
+	private onCloseFunc: () => void = () => { };
 
 	/**
 	 * Attaches to an existing terminal session with the given ID.
@@ -229,10 +222,18 @@ export class TerminalSession {
 			this.onOpenFunc();
 		});
 
+		this.connection.on('close', () => {
+			this.onCloseFunc();
+		});
+
 	}
 
 	onOpen(onOpenFunc: () => void) {
 		this.onOpenFunc = onOpenFunc;
+	}
+
+	onClose(onCloseFunc: () => void) {
+		this.onCloseFunc = onCloseFunc;
 	}
 
 	send(data: string): void {

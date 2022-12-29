@@ -8,9 +8,6 @@ const keypress = require('keypress');
 async function main() {
     const machineExecClient = new MachineExecClient();
     await machineExecClient.init();
-    machineExecClient.onExit(() => {
-        process.exit(0);
-    });
 
     const containers: string[] = await machineExecClient.getContributedContainers();
 
@@ -27,6 +24,10 @@ async function main() {
         process.stdout.columns,
         process.stdout.rows);
 
+    terminal.onClose(() => {
+        process.exit(0);
+    });
+    
     // console.log(`terminal.id: ${terminal.id}`);
 
 
