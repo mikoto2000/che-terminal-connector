@@ -14,27 +14,27 @@ async function main() {
 
     const containers: string[] = await machineExecClient.getContributedContainers();
 
-    console.log(containers);
+    // console.log(containers);
 
-    const choiicedContainerName: string = await choiceContainer(containers);
+    const choicedContainerName: string = await choiceContainer(containers);
 
-    console.log(choiicedContainerName);
+    // console.log(choiicedContainerName);
 
     const terminal: TerminalSession = await machineExecClient.createTerminalSession(
-        choiicedContainerName,
+        choicedContainerName,
         undefined,
         undefined,
         process.stdout.columns,
         process.stdout.rows);
 
-    console.log(`terminal.id: ${terminal.id}`);
+    // console.log(`terminal.id: ${terminal.id}`);
 
 
     terminal.onOpen(() => {
-        console.log('terminal opened.');
+        console.log(`${choicedContainerName} terminal(id: ${terminal.id}) opened.`);
 
         process.stdout.on('resize', function () {
-            console.log(`terminal size: { cols: ${process.stdout.columns}, rows: ${process.stdout.rows} }`);
+            // console.log(`terminal size: { cols: ${process.stdout.columns}, rows: ${process.stdout.rows} }`);
 
             terminal.resize(process.stdout.columns, process.stdout.rows);
         });
