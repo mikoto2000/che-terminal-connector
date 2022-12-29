@@ -9,7 +9,7 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc",
-    "run": "tsc ; node index.js",
+    "run": "tsc ; node ./out/index.js",
     "nexe": "nexe -o out/che-terminal-connector -t linux-x64-12.16.2 out/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
