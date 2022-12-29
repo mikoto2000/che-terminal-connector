@@ -16,6 +16,7 @@ async function main() {
     const choicedContainerName: string = await choiceContainer(containers);
 
     // console.log(choiicedContainerName);
+    // console.log(`column: ${process.stdout.columns}, rows: ${process.stdout.rows}`);
 
     const terminal: TerminalSession = await machineExecClient.createTerminalSession(
         choicedContainerName,
@@ -33,6 +34,11 @@ async function main() {
 
     terminal.onOpen(() => {
         console.log(`${choicedContainerName} terminal(id: ${terminal.id}) opened.`);
+
+        // `machineExecClient.createTerminalSession` に `columns` と `rows` を渡しても起動時のターミナルサイズに反映されないため、
+        // open 後に resize イベントを発火させている。
+        // console.log(`column: ${process.stdout.columns}, rows: ${process.stdout.rows}`);
+        terminal.resize(process.stdout.columns, process.stdout.rows);
 
         process.stdout.on('resize', function () {
             // console.log(`terminal size: { cols: ${process.stdout.columns}, rows: ${process.stdout.rows} }`);
