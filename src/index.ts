@@ -13,7 +13,7 @@ async function main() {
 
     // console.log(containers);
 
-    const choicedContainerName: string = await choiceContainer(containers);
+    const choicedContainerName: string = await choiceContainer(containers, () => process.exit(0));
 
     // console.log(choiicedContainerName);
     // console.log(`column: ${process.stdout.columns}, rows: ${process.stdout.rows}`);
@@ -67,7 +67,7 @@ async function main() {
     });
 }
 
-async function choiceContainer(containers: string[]): Promise<string> {
+async function choiceContainer(containers: string[], onCancelFunc: () => void): Promise<string> {
 
     const choices: Choice[] = containers.map((container) => ({
         title: container
@@ -80,7 +80,10 @@ async function choiceContainer(containers: string[]): Promise<string> {
         choices: choices
     };
 
-    const promptResponse = await prompts(choicePrompt);
+    const promptsOption: prompts.Options = {
+        onCancel: onCancelFunc
+    };
+    const promptResponse = await prompts(choicePrompt, promptsOption);
 
     return containers[promptResponse.container];
 }
