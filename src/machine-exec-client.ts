@@ -13,58 +13,92 @@
 import * as fs from 'fs-extra';
 import * as jsYaml from 'js-yaml';
 import * as WS from 'ws';
-import { URL } from 'url';
 
 /** Client for the machine-exec server. */
 export class MachineExecClient {
 
-	private cheHost: string;
-	private workspaceId: string;
-	private baseWsUrl: string;
-	private machineToken: string;
+	/** WebSocket connection to the machine-exec server. */
+	private connection: WS;
+
+	private initPromise: Promise<void>;
+
+	private LIST_CONTAINERS_MESSAGE_ID = -5;
 
 	constructor() {
-		const cheDashboardUrl = process.env.CHE_DASHBOARD_URL;
-		if (!cheDashboardUrl) {
-			throw new Error('CHE_DASHBOARD_URL environment variable not set');
-		}
-		this.cheHost = new URL(cheDashboardUrl).host;
+		let resolveInit: () => void;
+		let rejectInit: (reason: any) => void;
 
-		const workspaceId = process.env.DEVWORKSPACE_ID;
-		if (!workspaceId) {
-			throw new Error('DEVWORKSPACE_ID environment variable not set');
-		}
-		this.workspaceId = workspaceId;
+		this.connection = new WS('ws://localhost:3333/connect')
+			.on('message', async (data: WS.Data) => {
+				// TODO: ロギングフレームワーク導入
+				// console.log(`[WebSocket] <<< ${data.toString()}`);
 
-		try {
-			this.machineToken = fs.readFileSync('/var/run/secrets/kubernetes.io/serviceaccount/token', 'utf8');
-			if (!this.machineToken) {
-				throw new Error('Service account token file is empty.');
-			}
-		} catch (error) {
-			throw new Error(`Failed to read service account token: ${error.message}`);
-		}
+				const message = JSON.parse(data.toString());
+				if (message.method === 'connected') {
+					// the machine-exec server responds `connected` once it's ready to serve the clients
+					resolveInit();
+				} else if (message.method === 'onExecError') {
+					// TODO: エラーハンドリングをまじめにやる
+					console.log("onExecError");
+				}
+			})
+			.on('error', (err: Error) => {
+				// TODO: ロギングフレームワーク導入
+				// console.log(`[WebSocket] error: ${err.message}`);
 
-		this.baseWsUrl = `wss://${this.cheHost}/api/dev-workspace/v2/exec/${this.workspaceId}`;
+				rejectInit(err.message);
+			});
+
+		this.initPromise = new Promise<void>((resolve, reject) => {
+			resolveInit = resolve;
+			rejectInit = reject;
+		});
 	}
 
 	/**
 	 * Resolves once the machine-exec server is ready to serve the clients.
 	 * Rejects if an error occurred while establishing the WebSocket connection to machine-exec server.
 	 */
-	async init(): Promise<void> {
-		// No-op in the new implementation, but kept for API compatibility
-		return Promise.resolve();
+	init(): Promise<void> {
+		return this.initPromise;
 	}
 
 	dispose() {
-		// No-op
+		this.connection.terminate();
+	}
+
+	/**
+	 * Asks the machine-exec server to list all running DevWorkspace containers.
+	 *
+	 * @returns containers names
+	 */
+	async getContainers(): Promise<string[]> {
+		const jsonCommand = {
+			jsonrpc: '2.0',
+			method: 'listContainers',
+			params: [],
+			id: this.LIST_CONTAINERS_MESSAGE_ID,
+		};
+
+		const command = JSON.stringify(jsonCommand);
+		// TODO: ロギングフレームワーク導入
+		// console.log(`[WebSocket] >>> ${command}`);
+		this.connection.send(command);
+
+		return new Promise(resolve => {
+			this.connection.once('message', (data: WS.Data) => {
+				const message = JSON.parse(data.toString());
+				if (message.id === this.LIST_CONTAINERS_MESSAGE_ID) {
+					const remoteContainers: string[] = message.result.map((containerInfo: any) => containerInfo.container);
+					resolve(remoteContainers);
+				}
+			});
+		});
 	}
 
 	/** Returns the list of the containers the user might be interested in opening a terminal to. */
 	async getContributedContainers(): Promise<string[]> {
-		const devfilePath = process.env.DEVWORKSPACE_ORIGINAL_DEVFILE || '/devworkspace-metadata/original.devworkspace.yaml';
-		const originalDevFileContent = fs.readFileSync(devfilePath, 'utf8');
+		const originalDevFileContent = fs.readFileSync('/devworkspace-metadata/original.devworkspace.yaml', 'utf8');
 		const devfile = jsYaml.load(originalDevFileContent) as any;
 
 		const devfileComponents = devfile.components || [];
@@ -74,7 +108,11 @@ export class MachineExecClient {
 			.filter((component: any) => component.container)
 			.map((component: any) => component.name);
 
-		return devfileContainersNames;
+		// ask machine-exec to get all running containers and
+		// filter out those not declared in the devfile, e.g. che-gateway, etc.
+		const runningContainers = [... await this.getContainers()];
+		const runningDevfileContainers = runningContainers.filter(containerName => devfileContainersNames.includes(containerName));
+		return runningDevfileContainers;
 	}
 
 	/**
@@ -88,47 +126,37 @@ export class MachineExecClient {
 	 * @returns a TerminalSession object to manage the created terminal session
 	 */
 	async createTerminalSession(component: string, commandLine?: string, workdir?: string, columns: number = 80, rows: number = 24): Promise<TerminalSession> {
-		const wsUrl = `${this.baseWsUrl}/${component}`;
-		const options: WS.ClientOptions = {
-			headers: {
-				'Authorization': `Bearer ${this.machineToken}`
-			}
+		const createTerminalSessionCall = {
+			identifier: {
+				machineName: component
+			},
+			cmd: commandLine ? ['sh', '-c', commandLine] : [],
+			tty: true,
+			cwd: workdir || '',
+			cols: columns,
+			rows: rows
 		};
-		const connection = new WS(wsUrl, options);
 
-		return new Promise((resolve, reject) => {
-			connection.on('open', () => {
-				const createTerminalSessionCall = {
-					command: commandLine ? ['sh', '-c', commandLine] : [],
-					tty: true,
-					cwd: workdir || '',
-					cols: columns,
-					rows: rows,
-				};
+		const jsonCommand = {
+			jsonrpc: '2.0',
+			method: 'create',
+			params: createTerminalSessionCall,
+			id: 0
+		};
 
-				const jsonCommand = {
-					jsonrpc: '2.0',
-					method: 'exec',
-					params: createTerminalSessionCall,
-					id: 1 // Use a specific ID for the exec call
-				};
-				connection.send(JSON.stringify(jsonCommand));
-			});
+		const command = JSON.stringify(jsonCommand);
 
-			connection.once('message', (data: WS.Data) => {
+		// TODO: ロギングフレーム導入
+		// console.log(`[WebSocket] >>> ${command}`);
+		this.connection.send(command);
+
+		return new Promise(resolve => {
+			this.connection.once('message', (data: WS.Data) => {
 				const message = JSON.parse(data.toString());
-				// The first message should be the confirmation of the exec
-				// In the new API, there isn't a separate session ID. The WebSocket connection itself is the session.
-				// We can resolve with a new TerminalSession that encapsulates this connection.
-				if (message.id === 1 && message.result === null) { // Assuming successful exec returns null result
-					resolve(new TerminalSession(this, connection, wsUrl));
-				} else if (message.error) {
-					reject(new Error(`Failed to create terminal session: ${message.error.message}`));
+				const sessionID = message.result;
+				if (Number.isFinite(sessionID)) {
+					resolve(new TerminalSession(this, sessionID));
 				}
-			});
-
-			connection.on('error', (err: Error) => {
-				reject(err);
 			});
 		});
 	}
@@ -140,8 +168,9 @@ export class MachineExecClient {
 	 * @param columns new width
 	 * @param rows new height
 	 */
-	async resize(connection: WS, columns: number, rows: number): Promise<void> {
+	async resize(sessionID: number, columns: number, rows: number): Promise<void> {
 		const resizeTerminalCall = {
+			id: sessionID,
 			cols: columns,
 			rows
 		};
@@ -150,53 +179,53 @@ export class MachineExecClient {
 			jsonrpc: '2.0',
 			method: 'resize',
 			params: resizeTerminalCall,
-			id: 2 // Use a different ID for resize
+			id: 0
 		};
-		connection.send(JSON.stringify(jsonCommand));
+
+		const command = JSON.stringify(jsonCommand);
+
+		// TODO: ロギングフレーム導入
+		// console.log(`[WebSocket] >>> ${command}`);
+		this.connection.send(command);
 	}
+
 }
 
 
 /** Allows managing a remote terminal session. */
 export class TerminalSession {
+	/** This terminal session's ID that's assigned by the machine-exec server. */
+	id: number;
+
 	/** The WebSocket connection to the actual terminal. */
 	private connection: WS;
 
 	private onOpenFunc: () => void = () => { };
+
 	private onCloseFunc: () => void = () => { };
 
 	/**
 	 * Attaches to an existing terminal session with the given ID.
 	 *
 	 * @param machineExecClient client to communicate with the machine-exec server
-	 * @param connection The WebSocket connection for this session
+	 * @param id the terminal session ID assigned by the machine-exec server
 	 */
-	constructor(private machineExecClient: MachineExecClient, connection: WS, public readonly wsUrl: string) {
-		this.connection = connection;
+	constructor(private machineExecClient: MachineExecClient, id: number) {
+		this.id = id;
 
+		this.connection = new WS(`ws://localhost:3333/attach/${id}`);
 		this.connection.on('message', (data: WS.Data) => {
-			// Assuming the data is binary or a string to be written to stdout
-			// The new API might wrap the output in a JSON-RPC message
-			try {
-				const message = JSON.parse(data.toString());
-				if (message.method === 'stdout' && message.params) {
-					process.stdout.write(message.params);
-				}
-			} catch (e) {
-				// Not a JSON message, write directly
-				process.stdout.write((data as any));
-			}
+			process.stdout.write((data as any));
 		});
 
-		// The 'open' event is handled in createTerminalSession,
-		// but we call the user-provided onOpenFunc immediately since the connection is already open.
-		// Use a timeout to allow the caller to set the onOpen handler.
-		setTimeout(() => this.onOpenFunc(), 0);
-
+		this.connection.on('open', () => {
+			this.onOpenFunc();
+		});
 
 		this.connection.on('close', () => {
 			this.onCloseFunc();
 		});
+
 	}
 
 	onOpen(onOpenFunc: () => void) {
@@ -208,16 +237,10 @@ export class TerminalSession {
 	}
 
 	send(data: string): void {
-		const jsonCommand = {
-			jsonrpc: '2.0',
-			method: 'stdin',
-			params: data,
-			id: 3 // Use a different ID for stdin
-		};
-		this.connection.send(JSON.stringify(jsonCommand));
+		this.connection.send(data);
 	}
 
 	resize(columns: number, rows: number): void {
-		this.machineExecClient.resize(this.connection, columns, rows);
+		this.machineExecClient.resize(this.id, columns, rows);
 	}
 }
