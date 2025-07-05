@@ -1,3 +1,4 @@
+#!/bin/env node
 import { MachineExecClient, TerminalSession } from './machine-exec-client';
 
 import { PromptObject, Choice } from 'prompts';
