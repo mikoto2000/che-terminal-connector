@@ -1,3 +1,5 @@
+#!/bin/env node
+
 import { MachineExecClient, TerminalSession } from './machine-exec-client';
 
 import { PromptObject, Choice } from 'prompts';
@@ -33,7 +35,7 @@ async function main() {
 
 
     terminal.onOpen(() => {
-        console.log(`${choicedContainerName} terminal(id: ${terminal.id}) opened.`);
+        console.log(`${choicedContainerName} terminal opened.`);
 
         // `machineExecClient.createTerminalSession` に `columns` と `rows` を渡しても起動時のターミナルサイズに反映されないため、
         // open 後に resize イベントを発火させている。
