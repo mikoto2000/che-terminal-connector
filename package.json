@@ -1,12 +1,12 @@
 {
   "name": "che-terminal-connector",
-  "version": "1.0.13",
+  "version": "1.0.14",
   "description": "Terminal connector for Eclipse Che.",
   "preferGlobal": true,
   "bin": {
-    "che-terminal-connector": "index.js"
+    "che-terminal-connector": "out/index.js"
   },
-  "main": "index.js",
+  "main": "out/index.js",
   "scripts": {
     "build": "tsc",
     "run": "tsc ; node ./out/index.js",
